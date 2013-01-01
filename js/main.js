@@ -1,9 +1,11 @@
-
 // references:
 // heatmap (2d histogram) http://bl.ocks.org/3202354
 // histogram layout http://bl.ocks.org/3048450 https://github.com/mbostock/d3/wiki/Histogram-Layout#wiki-histogram
 // multiple thingies: http://bl.ocks.org/1305111
 
+// shit to do:
+// - make it all one svg
+// - rescale stuff so there's a scale per nesting.
 
 $(function() {
 	"use strict";
@@ -68,30 +70,13 @@ $(function() {
 	// Uses d3 to draw multiple histograms.
 	var display = function(id, data) {
 		var i;
-		/*
-		var d0 = new Date(2012, 1, 1);
-		var d1 = new Date(2012, 1, 2);
-		var d2 = new Date(2012, 1, 3);
-		// no d3 :)
-		var d4 = new Date(2012, 1, 5);
-		data = [
-			{date: d0, msg: "a"},
-			{date: d0, msg: "a"},
-			{date: d0, msg: "a"},
-			{date: d0, msg: "a"},
-			{date: d0, msg: "b"},
-			{date: d1, msg: "a"},
-			{date: d1, msg: "a"},
-			{date: d2, msg: "a"},
-			{date: d4, msg: "b"}
-		];
-		*/
 		var minDate = data.minDate;
 		var maxDate = data.maxDate;
 
 		// Compute the useful interval
 		var deltaMillis = (data.maxDate.getTime() - data.minDate.getTime());
-		// Useful intervals:
+		// Useful intervals.  Couldn't figure out how to use the
+		// d3 time intervals here.
 		var usefulIntervals = [ 
 			1000, // 1 sec
 			60*1000, // 1 min
@@ -125,101 +110,95 @@ $(function() {
 			.rollup(function(d) { maxSeenCounts = Math.max(maxSeenCounts, d.length); return d.length; })
 			.entries(data.logLines);
 
-		var margin = {top: 20, right: 90, bottom: 30, left: 50},
+		var margin = {top: 30, right: 90, bottom: 30, left: 50},
 		    width = 800 - margin.left - margin.right,
 			height = 200 - margin.top - margin.bottom;
 
-		var svg = d3.select(id).selectAll("svg")
-				.data(nest);
-		var svgg = svg.enter().append("svg:svg")
-				.attr("width", width + margin.left + margin.right)
-				.attr("height", height + margin.top + margin.bottom)
-				.append("g")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-		svgg.append("text").text(function(d) { return d.key; });
+		var svg = d3.select(id).insert("svg")
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", nest.length * (height + margin.top + margin.bottom));
 
-		// This is the time scale.
+		var svgg = svg.selectAll("g").data(nest)
+			.enter().append("g")
+			.attr("transform", function(d, i) { 
+				return "translate(" + margin.left + "," + (margin.top + i*(margin.top + height + margin.bottom)) + ")"; });
+		svgg.append("text").attr("transform", "translate(20, -10)").text(function(d) { return d.key; });
+
+		// Time scale
 		var x = d3.time.scale().range([0, width]);
 		x.domain([minDate, maxDate]);
 
-		var y = d3.scale.linear()
-			.domain([0, maxSeenCounts])
-			.range([height, 0]);	
+		// Vertical scale.  Gets re-scaled with every piece of data.
+		// The vertical scale is local, so it's not defined here.
+		// var y = d3.scale.linear()
+		//	.domain([0, maxSeenCounts])
+		//	.range([height, 0]);	
 
-		var bar = svgg.selectAll(".bar").data(function(x) { return x.values })
+		// Color
+		//var z = d3.scale.quantize()
+		//	.domain([0, maxSeenCounts])
+		//	.range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
+
+		var z = d3.scale.log().domain([1, maxSeenCounts]).range(["white", "steelblue"]);
+
+		var bar = svgg.selectAll(".bar").data(function(x) { 
+					var localMax = d3.max(x.values.map(function(y) { return y.values; }));
+					x.scale = d3.scale.linear()
+						.domain([0, localMax])
+						.range([height, 0]);	
+					return x.values; 
+				})
   			.enter().append("g")
   			.attr("class", "bar")
-  			// it's pretty hateful that we have to convert d.key back into a date!
-    		.attr("transform", function(d, i) { return "translate(" + x(new Date(d.key)) + "," + y(d.values) + ")"; });
+    		.attr("transform", function(d, i) { 
+    			// Note that above we set this, and now we reference
+    			// this.  No idea how to do this more appropriately
+    			// in d3.
+    			var localy = this.parentNode.__data__.scale; 
+	  			// it's pretty hateful that we have to convert d.key back into a date!
+    			return "translate(" + x(new Date(d.key)) + "," + localy(d.values) + ")"; 
+    		});
 
     	bar.append("rect")
     		.attr("x", 1)
     		.attr("width", width / ( (maxDate.getTime() - minDate.getTime()) / stepMillis) )
-    		.attr("height", function(d) { return height - y(d.values); })
-    		.attr("fill", "steelblue");
+    		.attr("height", function(d) { 
+    			var localy = this.parentNode.parentNode.__data__.scale; 
+    			return height - localy(d.values); 
+    		})
+    		// .attr("fill", "steelblue")
+    		// .attr("class", function(d) { return z(d.values); });
+    		.attr("stroke", "steelblue")
+    		.attr("fill", function(d) { return z(d.values); });
 
    		// Add an x-axis with label.
-	    var formatDate = d3.time.format("%b %d %H:%M:%S");
    		svgg.append("g")
 	   		.attr("class", "x axis")
 	   		.attr("transform", "translate(0," + height + ")")
 	   		.call(d3.svg.axis()
 	   			.scale(x)
-	   			.ticks( (maxDate.getTime() - minDate.getTime())/stepMillis)
-	   			.tickFormat(formatDate).orient("bottom"))
-	   		.append("text")
-	   		.attr("class", "label")
-	   		.attr("x", width)
-	   		.attr("y", -6)
-	   		.attr("text-anchor", "end")
-	   		.text("Date");
+	   			.ticks(5) // bad? // (maxDate.getTime() - minDate.getTime())/stepMillis)
+	   		    .orient("bottom"));
+	   		// .append("text") .attr("class", "label") .attr("x", width) .attr("y", -6) .attr("text-anchor", "end") .text("Date");
 
 		// Add a y-axis with label.
 		svgg.append("g")
 		    .attr("class", "y axis")
-		    .call(d3.svg.axis().scale(y).orient("left"))
+		    // This sets up an axis for each histogram.  There's gotta
+		    // be a faster way to do this.
+		    .call(function(u) { u.each(function(v) { d3.svg.axis().ticks(5).scale(v.scale).orient("left")(d3.select(this)) }) })
 		  .append("text")
 		    .attr("class", "label")
 		    .attr("y", 6)
 		    .attr("dy", ".71em")
 		    .attr("text-anchor", "end")
 		    .attr("transform", "rotate(-90)")
-		    .text("Value");
+		    .text("Count");
 
-/*
-		data = {abc: [1, 2, 2, 3, 14], def: [20, 20, 20, 2, 14]};
-		data = [
-			{key: "abc", cnts: [1,2,3]}, 
-			{key: "def", cnts: [50, 10, 10]}
-		];
-		var width = 600;
-		var height = 60;
-		var svg = d3.select(id).selectAll("svg")
-				.data(data)
-			.enter().append("svg:svg")
-				.attr("width", width)
-				.attr("height", height);
+		return;
+	};
 
-		var x = d3.scale.linear()
-			.domain([0, 6])
-			.range([0, width]);
-
-		var y = d3.scale.linear()
-			.domain([0, 30])
-			.range([height, 0]);	
-
-		var bar = svg.selectAll(".bar").data(function(x) { return x.cnts })
-  			.enter().append("g")
-  			.attr("class", "bar")
-    		.attr("transform", function(d, i) { return "translate(" + x(i) + "," + y(d) + ")"; });
-
-    	bar.append("rect")
-    		.attr("x", 1)
-    		.attr("width", 10)
-    		.attr("height", function(d) { return height - y(d); });
-    		*/
-	}
-
+	/* Ack. JS can't decide on a single test framework, so I had to write my own? */
 	var testSomeStuff = function() {
 		var sample = "2012-04-22 10:19:36,793  INFO A1234\n2012-04-22 10:29:36,793  INFO A2345\n";
 		var parsed = parseLogFile(sample);
@@ -240,19 +219,42 @@ $(function() {
 			roundDate(new Date(1356917825836), 1000*60*60).getTime());
 	};
 
+	var parseAndShow = function(text) {
+		var parsed = parseLogFile(text);
+		$('#viz').empty();
+		display("#viz", parsed);
+	}
+
 	var work = function() {
 		// var sample = "2012-04-22 10:19:36,793  INFO A1234\n2012-04-22 10:29:36,793  INFO A2345\n";
 		// var text = $('textarea')[0].value;
+		//d3.text("logsmall.txt", function(d) {
 		d3.text("logsmall.txt", function(d) {
 			console.profile();
-			var parsed = parseLogFile(d);
-			display("#fucker", parsed);
+			parseAndShow(d);
 			console.profileEnd();
 		});
 
 	};
 
-	// display("#fucker", undefined);
+	var attachHandlers = function() {
+		$('#fileinput').change(function(ev) {
+			var fileReader = new FileReader();
+			fileReader.onloadend = function(e) {
+				var result = fileReader.result;
+				parseAndShow(result);
+			};
+			if (ev.target.files) {
+				fileReader.readAsText(ev.target.files[0]);
+			}
+		});
+		$('#urlbutton').click(function(ev) {
+			var url = $('#urlinput')[0].value;
+			d3.text(url, parseAndShow);
+		});
+	};
+
 	work();
 	testSomeStuff();
+	attachHandlers();
 });

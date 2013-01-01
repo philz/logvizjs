@@ -8,7 +8,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title>Enterprise Dashboard</title>
+        <title>Log Analysis</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width">
 
@@ -25,7 +25,7 @@
         <div class="navbar navbar-inverse navbar-fixed-top">
             <div class="navbar-inner">
                 <div class="container">
-                    <a class="brand" href="/">Howdy</a>
+                    <a class="brand" href="/">Log Analysis</a>
                 </div>
             </div>
         </div>
@@ -34,11 +34,36 @@
 
             <!-- Example row of columns -->
             <div class="row-fluid">
-                <div class="span6" id="build-results">
-                    <h2>Hi</h2>
+                <div class="span6">
+                    <h2>What do you look for when you're looking at logs?</h2>
+                    <p>
+                        I look for <em>outliers</em>.  I want filter out the
+                        log entries that are noisy, and look for the unusual
+                        ones.
+                    </p>
+                    <p>
+                        With Unix, first and foremost, I filter out the
+                        log entries that I'm not intested in.
+                        <code>cat log | grep -v 'boring'</code>.  When
+                        that's not enough, I cluster the log entries
+                        by removing their uniqueness.  Something like:
+                        <code>cat log | tr '[0-9]' N | sort | uniq -c | sort -n</code>
+                        That produces a histogram of log clusters.
+                    </p>
+                    <p>
+                        The next step is to visualize those clusters
+                        over time, and that's what this page does.
+                        It clusters log entries by text (using the simple
+                        mechanism of removing numbers) and then by
+                        time (building a histogram).
+                    </p>
+                    <h2>Let's do it (all client-side)!</h2>
+                    <div class="hero-unit">
+                        Upload file: <input type="file" id="fileinput" /><br/>
+                        or<br/>
+                        URL: <input value="logsmall.txt" id="urlinput" /><button id="urlbutton" class="btn btn-primary">Fetch</button><br/>
+                    </div>
                 </div>
-
-               
             </div>
             <div class="row-fluid">
 
@@ -58,7 +83,7 @@
 -->
 
             <div class="row-fluid">
-                <div class="span6" id="fucker">
+                <div class="span6" id="viz">
                 </div>
             </div>
             <hr>
@@ -72,10 +97,10 @@
 
 
 <!--
-        <a href="https://github.mtv.cloudera.com/Starship/enterprise-dashboard"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:10000;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+        <a href="https://github.com/philip/logvizjs"><img style="position: absolute; top: 0; right: 0; border: 0; z-index:10000;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
     -->
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script> -->
         <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.8.2.min.js"><\/script>')</script>
 
         <script src="js/vendor/bootstrap.min.js"></script>
