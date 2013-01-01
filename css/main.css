@@ -1,0 +1,128 @@
+body {
+    padding-top: 60px;
+    padding-bottom: 40px;
+    min-height: 600px
+}
+
+// quantized scales for fills from http://bl.ocks.org/4060606
+.q0-9 { fill:rgb(247,251,255); }
+.q1-9 { fill:rgb(222,235,247); }
+.q2-9 { fill:rgb(198,219,239); }
+.q3-9 { fill:rgb(158,202,225); }
+.q4-9 { fill:rgb(107,174,214); }
+.q5-9 { fill:rgb(66,146,198); }
+.q6-9 { fill:rgb(33,113,181); }
+.q7-9 { fill:rgb(8,81,156); }
+.q8-9 { fill:rgb(8,48,107); }
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+/* Let Font Awesome do its magic, not Bootstrap. */
+[class^="icon-"], [class*=" icon-"] {
+	background-image: none;
+}
+
+.build-status {
+	padding: 4px;
+}
+
+.build-status > h4 {
+	margin: 0;
+}
+
+.build-status > ul {
+	margin-left: 20px;
+}
+
+.build-status > p {
+	margin-left: 20px;
+}
+
+#build-results-list {
+	list-style-type: none;
+	margin: 0;
+}
+
+.result-icon {
+	display: inline-block;
+}
+
+.result-icon i {
+	vertical-align: baseline;
+}
+
+.build-success {}
+
+.build-success .result-icon {
+	color: #090;
+}
+
+.build-in-progress {}
+
+.build-in-progress .result-icon {
+	color: #999;
+}
+
+.build-unstable {
+    background-color: #dd0;
+}
+
+.build-unstable .result-icon {
+	color: #660;
+}
+
+.build-failure {
+	color: #fff;
+	background-color: #700;
+}
+
+.build-failure .result-icon {
+	color: #d00;
+}
+
+.build-failure .culprits a {
+	color: #fff;
+}
+
+.culprits li {
+    display: inline;
+}
+
+.culprits li:after {
+    content: ',';
+}
+
+.culprits li:first-child:after {
+    content: '';
+}
+
+.culprits li:last-child:after {
+    content: '';
+}
+
+#escalationsRegion h3 {
+	margin-bottom: 0;
+}
+
+#escalationsRegion ul {
+	list-style-type: none;
+	margin: 0;
+}
+
+#escalationsRegion ul li {
+	margin-bottom: 25px;
+}
+
+#escalationsRegion ul li p {
+	margin-left: 20px;
+}
+
+#escalationsRegion .assigned {
+	font-weight: normal;
+	font-size: 80%;
+}
