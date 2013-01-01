@@ -1,12 +1,4 @@
-// references:
-// heatmap (2d histogram) http://bl.ocks.org/3202354
-// histogram layout http://bl.ocks.org/3048450 https://github.com/mbostock/d3/wiki/Histogram-Layout#wiki-histogram
-// multiple thingies: http://bl.ocks.org/1305111
-
-// shit to do:
-// - make it all one svg
-// - rescale stuff so there's a scale per nesting.
-
+//
 $(function() {
 	"use strict";
 
@@ -226,10 +218,8 @@ $(function() {
 	}
 
 	var work = function() {
-		// var sample = "2012-04-22 10:19:36,793  INFO A1234\n2012-04-22 10:29:36,793  INFO A2345\n";
 		// var text = $('textarea')[0].value;
-		//d3.text("logsmall.txt", function(d) {
-		d3.text("logsmall.txt", function(d) {
+		d3.text("log_tiny.txt", function(d) {
 			console.profile();
 			parseAndShow(d);
 			console.profileEnd();
